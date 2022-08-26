@@ -1,4 +1,4 @@
-
+ 
 #include "DetSteppingAction.hh"
 #include "DetEventAction.hh"
 #include "DetDetectorConstruction.hh"
@@ -40,7 +40,7 @@ void DetSteppingAction::UserSteppingAction(const G4Step* step)
   G4StepPoint* prePoint = step->GetPreStepPoint();
   G4String vname = prePoint->GetTouchableHandle()->GetVolume()->GetLogicalVolume()->GetName();
 
-  if(vname=="sc_l")
+  if(vname=="scintplate_l")
   {
     if(Name==fpartname)
     {
@@ -56,7 +56,7 @@ void DetSteppingAction::UserSteppingAction(const G4Step* step)
     }
   }
 
-  if(vname=="alPMT_l") // PMT volume
+  if(vname=="PovPhotocathode") // PMT volume
   {
     if(particleType==G4OpticalPhoton::OpticalPhotonDefinition())
     {
@@ -64,7 +64,7 @@ void DetSteppingAction::UserSteppingAction(const G4Step* step)
     //  Tph[Nph] = theTrack->GetGlobalTime()/ns;
     // collect the energy 
       Energy1 = theTrack->GetKineticEnergy()/eV;
-      if(Energy1>=2.3 && Energy1<=3.2 && Nph<150000)
+      if(Energy1>=1.9 && Energy1<=4.0 && Nph<150000)
       {
         Eph[Nph] = Energy1;
         Tph[Nph] = theTrack->GetGlobalTime()/ns;
