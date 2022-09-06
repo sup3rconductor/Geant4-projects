@@ -174,7 +174,7 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 	G4double CovThickness = 0.03 * mm;
 	G4RotationMatrix* OptRot = new G4RotationMatrix;
 	OptRot->rotateY(90. * deg);
-	Z0const = 0.5 * Visotascr - 0.5 * Visotaotv + OptRad;
+	Z0const = 0;
 	Y0const = h1_ypos;
 	X0const = h1_xpos;
 
@@ -204,38 +204,38 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 
 	/* Photomultiplier */
 
-	//Glass
-	G4double GlassRad = 10 * mm;
+	G4double GlassRad = 1.5 * mm;
 	G4double GlassHeight = 1 * mm;
+
+	G4double PhotRad = GlassRad;
+	G4double PhotHeight = 0.1 * mm;
+
+	G4double BodyInnerRad = GlassRad;
+	G4double BodyOuterRad = GlassRad + 0.1 * mm;
+	G4double BodyHeight = GlassHeight + PhotCat;
+
+	//Body
+	G4double Body_xpos = 0.5 * (Dlinascr + BobyHeight);
+
+	G4Tubs* solidBody = new G4Tubs("body_s", BodyInnerRad, BodyOuterRad, 0.5 * BodyHeight, 0. * deg, 360. * deg);
+	G4LogicalVolume* logicBody = new G4LogicalVolume(solidBody, AlMaterial, "body_l");
+	G4PhysicalVolume* physBody = new G4PVPlacement(OptRot, G4ThreeVector(Body_xpos, h1_ypos, 0.5 * Visotascr - 0.5 * Visotaotv + OptRad), logicBody, "BODY", logicWorld, false, 0, checkOverlaps);
+
+	//Glass
 	G4double Glass_xpos = 0.5 * (Dlinascr + GlassHeight);
 
-	G4Tubs* solidPhotGlass = new G4Tubs("PhotGlass_s", 0, GlassRad, 0.5 * GlassHeight, 0. * deg, 360. * deg);
-	G4LogicalVolume* logicPhotGlass = new G4LogicalVolume(solidPhotGlass, PhotCat, "PhotGlass_s");
-	G4VPhysicalVolume* physPhotGlass = new G4PVPlacement(OptRot, G4ThreeVector(Glass_xpos, h1_ypos, 0.5 * Visotascr - 0.5 * Visotaotv + OptRad), logicPhotGlass, "GLASS", logicWorld, false, 0, checkOverlaps);
+	G4Tubs* solidPhotGlass = new G4Tubs("glass_s", 0, GlassRad, 0.5 * GlassHeight, 0. * deg, 360. * deg);
+	G4LogicalVolume* logicPhotGlass = new G4LogicalVolume(solidPhotGlass, PhotCat, "glass_l");
+	G4VPhysicalVolume* physPhotGlass = new G4PVPlacement(OptRot, G4ThreeVector(Glass_xpos, h1_ypos, 0.5 * Visotascr - 0.5 * Visotaotv + OptRad), logicPhotGlass, "GLASS", logicBody, false, 0, checkOverlaps);
 
 	//PhotoCathode
-	G4double PhotRad = 10 * mm;
-	G4double PhotHeight = 0.1 * mm;
 	G4double Phot_xpos = 0.5 * (Dlinascr + PhotHeight) + GlassHeight;
 
 	G4Tubs* solidPhot = new G4Tubs("phot_s", 0, PhotRad, 0.5 * PhotHeight, 0. * deg, 360. * deg);
 	G4LogicalVolume* logicPhot = new G4LogicalVolume(solidPhot, AlMaterial, "phot_l");
-	G4VPhysicalVolume* physPhot = new G4PVPlacement(OptRot, G4ThreeVector(Phot_xpos, h1_ypos, 0.5 * Visotascr - 0.5 * Visotaotv + OptRad), logicPhot, "PHOTOCATHODE", logicWorld, false, 0, checkOverlaps);
+	G4VPhysicalVolume* physPhot = new G4PVPlacement(OptRot, G4ThreeVector(Phot_xpos, h1_ypos, 0.5 * Visotascr - 0.5 * Visotaotv + OptRad), logicPhot, "PHOTOCATHODE", logicBody, false, 0, checkOverlaps);
 
-	//Body
-	G4double BodyRad = 11 * mm;
-	G4double BodyHeight = 1.3 * mm;
-	G4double HollowRad = 10 * mm;
-	G4double HollowHeight = 1.1 * mm;
-	G4double Hollow_zpos = 0.1 * mm;
-	G4double Body_xpos = 0.5 * (Dlinascr + BodyHeight);
 
-	G4Tubs* body = new G4Tubs("bdy", 0, BodyRad, 0.5 * BodyHeight, 0. * deg, 360. * deg);
-	G4Tubs* hollow = new G4Tubs("hllw", 0, HollowRad, 0.5 * HollowHeight, 0. * deg, 360. * deg);
-	G4ThreeVector transfer(0, 0, Hollow_zpos);
-	G4SubtractionSolid* solidBody = new G4SubtractionSolid("body_s", body, hollow, Rot, transfer);
-	G4LogicalVolume* logicBody = new G4LogicalVolume(solidBody, AlMaterial, "body_l");
-	G4VPhysicalVolume* physBody = new G4PVPlacement(OptRot, G4ThreeVector(Body_xpos, h1_ypos, 0.5 * Visotascr - 0.5 * Visotaotv + OptRad), logicBody, "BODY", logicWorld, true, 0);
 
 						/*	OPTICAL PROPERTIES	*/
 
@@ -273,8 +273,8 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 	ScintillatorProperties->AddConstProperty("SCINTILLATIONTIMECONSTANT2", 5 * ns);
 	ScintillatorProperties->AddConstProperty("SCINTILLATIONYIELD1", 1.0);
 	ScintillatorProperties->AddConstProperty("SCINTILLATIONYIELD2", 0.0);
-	/*Scint->SetMaterialPropertiesTable(ScintillatorProperties);
-	Scint->GetIonisation()->SetBirksConstant(0.126 * mm / MeV); */
+	Scint->SetMaterialPropertiesTable(ScintillatorProperties);
+	Scint->GetIonisation()->SetBirksConstant(0.126 * mm / MeV); 
 
 	
 	G4double EnergyOpt[10] = { 1.9 * eV, 2.2 * eV, 2.3 * eV, 2.4 * eV, 2.56 * eV, 2.66 * eV, 2.68 * eV, 3.69 * eV, 3.7 * eV, 4.0 * eV };
@@ -326,7 +326,7 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 	G4MaterialPropertiesTable* PhotCatPT = new G4MaterialPropertiesTable();
 	PhotCatPT->AddProperty("RINDEX", EnergyPhotCat, RindPhotCat, 2);
 	PhotCatPT->AddProperty("ABSLENGTH", EnergyPhotCat, AbsLenPhotCat, 2);
-	PhotCat->SetMaterialPropertiesTable(PhotCatPT);
+	PhotCat->SetMaterialPropertiesTable(PhotCatPT); 
 
 	//Border borosilicate glass - aluminium: mirror reflection
 	G4double reflectivity[2] = {0.8, 0.8};
@@ -339,11 +339,24 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 
 	G4MaterialPropertiesTable* PovPhotCatPT = new G4MaterialPropertiesTable();
 	PovPhotCatPT->AddProperty("REFLECTIVITY", PhotonEnergyBord, reflectivity, 2);
-	OptPovPhot->SetMaterialPropertiesTable(PovPhotCatPT);
+	OptPovPhot->SetMaterialPropertiesTable(PovPhotCatPT); */
+
+
+
+
+
 
 
 	/*	VISUAL PROPERTIES	*/
 
+
+	//Fiberglass visual properties
+	G4Colour green(0.0, 1.0, 0.0);
+	G4VisAttributes* vis_green = new G4VisAttributes;
+	vis_green->SetForceSolid(true);
+	logicCore->SetVisAttributes(vis_green);
+	logicInCov->SetVisAttributes(vis_green);
+	logicOutCov->SetVisAttributes(vis_green);
 
 	//Making world invisible
 	auto UniverseVisAtt = new G4VisAttributes(G4Colour(1.0, 1.0, 1.0));
