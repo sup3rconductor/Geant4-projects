@@ -202,7 +202,9 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 	G4VPhysicalVolume* physOutCov3 = new G4PVPlacement(OptRot, G4ThreeVector(h1_xpos, h3_ypos, 0.5 * Visotascr - 0.5 * Visotaotv + OptRad), logicOutCov, "OUTER_COVER_3", logicWorld, false, 0, checkOverlaps);
 	G4VPhysicalVolume* physOutCov4 = new G4PVPlacement(OptRot, G4ThreeVector(h1_xpos, h4_ypos, 0.5 * Visotascr - 0.5 * Visotaotv + OptRad), logicOutCov, "OUTER_COVER_4", logicWorld, false, 0, checkOverlaps);
 
-	/* Photomultiplier */
+	
+							/* PHOTOMULTIPLIER */
+
 
 	G4double GlassRad = 1.5 * mm;
 	G4double GlassHeight = 1 * mm;
@@ -212,14 +214,14 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 
 	G4double BodyInnerRad = GlassRad;
 	G4double BodyOuterRad = GlassRad + 0.1 * mm;
-	G4double BodyHeight = GlassHeight + PhotCat;
+	G4double BodyHeight = GlassHeight + PhotHeight;
 
 	//Body
-	G4double Body_xpos = 0.5 * (Dlinascr + BobyHeight);
+	G4double Body_xpos = 0.5 * (Dlinascr + BodyHeight);
 
 	G4Tubs* solidBody = new G4Tubs("body_s", BodyInnerRad, BodyOuterRad, 0.5 * BodyHeight, 0. * deg, 360. * deg);
 	G4LogicalVolume* logicBody = new G4LogicalVolume(solidBody, AlMaterial, "body_l");
-	G4PhysicalVolume* physBody = new G4PVPlacement(OptRot, G4ThreeVector(Body_xpos, h1_ypos, 0.5 * Visotascr - 0.5 * Visotaotv + OptRad), logicBody, "BODY", logicWorld, false, 0, checkOverlaps);
+	G4VPhysicalVolume* physBody = new G4PVPlacement(OptRot, G4ThreeVector(Body_xpos, h1_ypos, 0.5 * Visotascr - 0.5 * Visotaotv + OptRad), logicBody, "BODY", logicWorld, false, 0, checkOverlaps);
 
 	//Glass
 	G4double Glass_xpos = 0.5 * (Dlinascr + GlassHeight);
@@ -339,7 +341,7 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 
 	G4MaterialPropertiesTable* PovPhotCatPT = new G4MaterialPropertiesTable();
 	PovPhotCatPT->AddProperty("REFLECTIVITY", PhotonEnergyBord, reflectivity, 2);
-	OptPovPhot->SetMaterialPropertiesTable(PovPhotCatPT); */
+	OptPovPhot->SetMaterialPropertiesTable(PovPhotCatPT); 
 
 
 
@@ -348,15 +350,6 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 
 
 	/*	VISUAL PROPERTIES	*/
-
-
-	//Fiberglass visual properties
-	G4Colour green(0.0, 1.0, 0.0);
-	G4VisAttributes* vis_green = new G4VisAttributes;
-	vis_green->SetForceSolid(true);
-	logicCore->SetVisAttributes(vis_green);
-	logicInCov->SetVisAttributes(vis_green);
-	logicOutCov->SetVisAttributes(vis_green);
 
 	//Making world invisible
 	auto UniverseVisAtt = new G4VisAttributes(G4Colour(1.0, 1.0, 1.0));
