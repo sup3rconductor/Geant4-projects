@@ -219,7 +219,7 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 	//Body
 	G4double Body_xpos = 0.5 * (Dlinascr + BodyHeight);
 
-	G4Tubs* solidBody = new G4Tubs("body_s", BodyInnerRad, BodyOuterRad, 0.5 * BodyHeight, 0. * deg, 360. * deg);
+	G4Tubs* solidBody = new G4Tubs("body_s", 0, BodyOuterRad, 0.5 * BodyHeight, 0. * deg, 360. * deg);
 	G4LogicalVolume* logicBody = new G4LogicalVolume(solidBody, AlMaterial, "body_l");
 	G4VPhysicalVolume* physBody = new G4PVPlacement(OptRot, G4ThreeVector(Body_xpos, h1_ypos, 0.5 * Visotascr - 0.5 * Visotaotv + OptRad), logicBody, "BODY", logicWorld, false, 0, checkOverlaps);
 
@@ -228,14 +228,14 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 
 	G4Tubs* solidPhotGlass = new G4Tubs("glass_s", 0, GlassRad, 0.5 * GlassHeight, 0. * deg, 360. * deg);
 	G4LogicalVolume* logicPhotGlass = new G4LogicalVolume(solidPhotGlass, PhotCat, "glass_l");
-	G4VPhysicalVolume* physPhotGlass = new G4PVPlacement(0, G4ThreeVector(- 0.5 * PhotHeight, 0., 0.), logicPhotGlass, "GLASS", logicBody, false, 0, checkOverlaps);
+	G4VPhysicalVolume* physPhotGlass = new G4PVPlacement(0, G4ThreeVector(0, 0, 0.5 * BodyHeight - 0.5* GlassHeight), logicPhotGlass, "GLASS", logicBody, false, 0, checkOverlaps);
 
 	//PhotoCathode
 	G4double Phot_xpos = -0.5 * GlassHeight;
 
 	G4Tubs* solidPhot = new G4Tubs("phot_s", 0, PhotRad, 0.5 * PhotHeight, 0. * deg, 360. * deg);
 	G4LogicalVolume* logicPhot = new G4LogicalVolume(solidPhot, AlMaterial, "phot_l");
-	G4VPhysicalVolume* physPhot = new G4PVPlacement(0, G4ThreeVector(0., 0., Phot_xpos), logicPhot, "PHOTOCATHODE", logicBody, false, 0, checkOverlaps);
+	G4VPhysicalVolume* physPhot = new G4PVPlacement(0, G4ThreeVector(0, 0, - 0.5 * BodyHeight + 0.5 * PhotHeight), logicPhot, "PHOTOCATHODE", logicBody, false, 0, checkOverlaps);
 
 
 
