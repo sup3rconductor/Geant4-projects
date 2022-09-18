@@ -128,45 +128,10 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 	G4double Shirinascr = 200 * mm;
 	G4double Visotascr = 5 * mm;
 
-
-	//Hole parameters
+	//Holes
 	G4double Shirinaotv = 1 * mm;
 	G4double Visotaotv = 4 * mm;
-
-	G4double h1_xpos = 0 * mm;
-	G4double h1_ypos = 0.5 * Shirinascr - 47 * mm;
-	G4double h1_zpos = 0.5 * Visotascr;
-
-
-	G4Box* solidScr = new G4Box("sc_s", 0.5 * Dlinascr, 0.5 * Shirinascr, 0.5 * Visotascr);
-	G4Box* overstie = new G4Box("otv", 0.5 * Dlinascr + 0.1 * mm, 0.5 * Shirinaotv, 0.5 * Visotaotv);
-
-	//Hole 1
-	G4RotationMatrix* Rot = new G4RotationMatrix;
-	G4ThreeVector trans1(h1_xpos, h1_ypos, h1_zpos);
-	G4SubtractionSolid* solidScintplate1 = new G4SubtractionSolid("scintplate_s1", solidScr, overstie, Rot, trans1);
-
-	G4double h2_ypos = h1_ypos - 35 * mm;
-	G4ThreeVector trans2(h1_xpos, h2_ypos, h1_zpos);
-
-	//Hole 2
-	G4SubtractionSolid* solidScintplate2 = new G4SubtractionSolid("scintplate_s2", solidScintplate1, overstie, Rot, trans2);
-	G4double h3_ypos = h2_ypos - 35 * mm;
-	G4ThreeVector trans3(h1_xpos, h3_ypos, h1_zpos);
-
-	//Hole 3
-	G4SubtractionSolid* solidScintplate3 = new G4SubtractionSolid("scintplate_s3", solidScintplate2, overstie, Rot, trans3);
-	G4double h4_ypos = h3_ypos - 35 * mm;
-	G4ThreeVector trans4(h1_xpos, h4_ypos, h1_zpos);
-
-	//Hole 4
-	G4SubtractionSolid* solidScintplate4 = new G4SubtractionSolid("scintplate_s4", solidScintplate3, overstie, Rot, trans4);
-
-	G4LogicalVolume* logicScintplate = new G4LogicalVolume(solidScintplate4, Scint, "scintplate_l");
-	G4ThreeVector transplate(0., 0., 0.);
-
-	G4VPhysicalVolume* physScintplate = new G4PVPlacement(0, transplate, logicScintplate, "scintplate", logicWorld, true, 0);
-
+	G4RotationMatrix* OtvRot = new G4RotationMatrix;
 
 	//Optical fiber
 	G4double OptRad = 0.5 * mm;
@@ -174,70 +139,51 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 	G4double CovThickness = 0.03 * mm;
 	G4RotationMatrix* OptRot = new G4RotationMatrix;
 	OptRot->rotateY(90. * deg);
-	Z0const = 0;
-	Y0const = h1_ypos;
-	X0const = h1_xpos;
 
-	//Core
-	G4Tubs* solidCore = new G4Tubs("core_s", 0, OptRad - 2 * CovThickness, OptHeight, 0. * deg, 360. * deg);
-	G4LogicalVolume* logicCore = new G4LogicalVolume(solidCore, PS, "core_l");
-	G4VPhysicalVolume* physCore1 = new G4PVPlacement(OptRot, G4ThreeVector(h1_xpos, h1_ypos, 0.5 * Visotascr - 0.5 * Visotaotv + OptRad), logicCore, "CORE_1", logicWorld, false, 0, checkOverlaps);
-	G4VPhysicalVolume* physCore2 = new G4PVPlacement(OptRot, G4ThreeVector(h1_xpos, h2_ypos, 0.5 * Visotascr - 0.5 * Visotaotv + OptRad), logicCore, "CORE_2", logicWorld, false, 0, checkOverlaps);
-	G4VPhysicalVolume* physCore3 = new G4PVPlacement(OptRot, G4ThreeVector(h1_xpos, h3_ypos, 0.5 * Visotascr - 0.5 * Visotaotv + OptRad), logicCore, "CORE_3", logicWorld, false, 0, checkOverlaps);
-	G4VPhysicalVolume* physCore4 = new G4PVPlacement(OptRot, G4ThreeVector(h1_xpos, h4_ypos, 0.5 * Visotascr - 0.5 * Visotaotv + OptRad), logicCore, "CORE_4", logicWorld, false, 0, checkOverlaps);
-
-	//Inner cover
-	G4Tubs* solidInCov = new G4Tubs("InCov_s", 0, OptRad - CovThickness, OptHeight, 0. * deg, 360. * deg);
-	G4LogicalVolume* logicInCov = new G4LogicalVolume(solidInCov, PMMA, "InCov_l");
-	G4VPhysicalVolume* physInCov1 = new G4PVPlacement(0, G4ThreeVector(0., 0., 0.), logicInCov, "INNER_COVER_1", logicCore, false, 0, checkOverlaps);
-	G4VPhysicalVolume* physInCov2 = new G4PVPlacement(0, G4ThreeVector(0., 0., 0.), logicInCov, "INNER_COVER_2", logicCore, false, 0, checkOverlaps);
-	G4VPhysicalVolume* physInCov3 = new G4PVPlacement(0, G4ThreeVector(0., 0., 0.), logicInCov, "INNER_COVER_3", logicCore, false, 0, checkOverlaps);
-	G4VPhysicalVolume* physInCov4 = new G4PVPlacement(0, G4ThreeVector(0., 0., 0.), logicInCov, "INNER_COVER_4", logicCore, false, 0, checkOverlaps);
-
-	//Outer cover
-	G4Tubs* solidOutCov = new G4Tubs("OutCov_s", 0, OptRad, OptHeight, 0. * deg, 360. * deg);
-	G4LogicalVolume* logicOutCov = new G4LogicalVolume(solidOutCov, FP, "OutCov_l");
-	G4VPhysicalVolume* physOutCov2 = new G4PVPlacement(0, G4ThreeVector(0., 0., 0.), logicOutCov, "OUTER_COVER_2", logicCore, false, 0, checkOverlaps);
-	G4VPhysicalVolume* physOutCov1 = new G4PVPlacement(0, G4ThreeVector(0., 0., 0.), logicOutCov, "OUTER_COVER_1", logicCore, false, 0, checkOverlaps);
-	G4VPhysicalVolume* physOutCov3 = new G4PVPlacement(0, G4ThreeVector(0., 0., 0.), logicOutCov, "OUTER_COVER_3", logicCore, false, 0, checkOverlaps);
-	G4VPhysicalVolume* physOutCov4 = new G4PVPlacement(0, G4ThreeVector(0., 0., 0.), logicOutCov, "OUTER_COVER_4", logicCore, false, 0, checkOverlaps);
-
-
-	/* PHOTOMULTIPLIER */
-
-
+	//Photomultiplier
 	G4double GlassRad = 1.5 * mm;
 	G4double GlassHeight = 1 * mm;
 
 	G4double PhotRad = GlassRad;
 	G4double PhotHeight = 0.1 * mm;
 
-	G4double BodyInnerRad = GlassRad;
 	G4double BodyOuterRad = GlassRad + 0.1 * mm;
 	G4double BodyHeight = GlassHeight + PhotHeight;
 
-	//Body
-	G4double Body_xpos = 0.5 * (Dlinascr + BodyHeight);
+	//Start position
+	G4double X0 = 2 * Dlinascr;
+	G4double Y0 = -2 * Shirinascr;
+	G4double Z0 = 0;
 
-	G4Tubs* solidBody = new G4Tubs("body_s", 0, BodyOuterRad, 0.5 * BodyHeight, 0. * deg, 360. * deg);
-	G4LogicalVolume* logicBody = new G4LogicalVolume(solidBody, AlMaterial, "body_l");
-	G4VPhysicalVolume* physBody = new G4PVPlacement(OptRot, G4ThreeVector(Body_xpos, h1_ypos, 0.5 * Visotascr - 0.5 * Visotaotv + OptRad), logicBody, "BODY", logicWorld, false, 0, checkOverlaps);
+	G4int NHole, NOpt, NPhot = 100;
+	G4int NLvls = 5;
+	G4int NPhotCat = 20;
+	G4double h_xpos[NLvls];
+	G4double h_ypos[NHoles];
+	G4double h_zpos = 0.5 * Visotascr;
 
-	//Glass
+	G4double h_xpos[0] = X0;
+	G4double h_ypos[0] = Y0 - 47 * mm;
+
 	G4double Glass_zpos = 0.5 * BodyHeight - 0.5 * GlassHeight;
-
-	G4Tubs* solidPhotGlass = new G4Tubs("glass_s", 0, GlassRad, 0.5 * GlassHeight, 0. * deg, 360. * deg);
-	G4LogicalVolume* logicPhotGlass = new G4LogicalVolume(solidPhotGlass, PhotCat, "glass_l");
-	G4VPhysicalVolume* physPhotGlass = new G4PVPlacement(0, G4ThreeVector(0, 0, Glass_zpos), logicPhotGlass, "GLASS", logicBody, false, 0, checkOverlaps);
-
-	//PhotoCathode
 	G4double Phot_zpos = -0.5 * BodyHeight + 0.5 * PhotHeight;
 
-	G4Tubs* solidPhot = new G4Tubs("phot_s", 0, PhotRad, 0.5 * PhotHeight, 0. * deg, 360. * deg);
-	G4LogicalVolume* logicPhot = new G4LogicalVolume(solidPhot, AlMaterial, "phot_l");
-	G4VPhysicalVolume* physPhot = new G4PVPlacement(0, G4ThreeVector(0, 0, Phot_zpos), logicPhot, "PHOTOCATHODE", logicBody, false, 0, checkOverlaps);
+	//Constructing the detector
+	G4int NPlate = 25;
+	G4double XPlate, Yplate, Zplate;
+	XPlate = X0;
+	Yplate = Y0;
+	Zplate = Z0;
 
-
+	G4Box *solidScr[NPlate] = { NULL }, *solidOtv[NHole] = { NULL };
+	G4Tubs *solidCore[NOpt] = { NULL }, *solidInCov[NOpt] = { NULL }, *solidOutCov[NOpt] = { NULL }, 
+		   *solidBody[NPhot] = { NULL }, *solidGlass[NPhot] = { NULL }, *solidPhot[NPhot] = { NULL };
+	G4LogicalVolume *logicScr[NPlate] = { NULL }, *logicCore[NOpt] = { NULL }, *logicInCov[NOpt] = { NULL }, 
+					*logicOutCov[NOpt] = { NULL }, *logicBody[NPhot] = { NULL }, *logicGlass[NPhot] = { NULL }, *logicPhot[NPhot] = { NULL };
+	G4VPhysicalVolume *solidScr[NPlate] = { NULL }, *solidCore[NOpt] = { NULL }, *solidInCov[NOpt] = { NULL },
+					  *solidOutCov[NOpt] = { NULL }, *solidBody[NPhot] = { NULL }, *solidGlass[NPhot] = { NULL }, *solidPhot[NPhot] = { NULL };
+	G4SubtractionSolid *solidScintPlate[NHole] = { NULL };
+	
 
 	/*	OPTICAL PROPERTIES	*/
 
