@@ -160,25 +160,26 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 	G4double GapFP = 0.1 * mm;		//Gap between frame and plate
 
 	G4double ShellThickness = 2 * mm;
-	G4double ShellLength = 5 * ScrLength + 6 * GapH + 2 * ShellThickness;
-	G4double ShellWidth = 5 * ScrWidth + 6 * GapH + 2 * ShellThickness;
-	G4double ShellHeight = 8 * ScrHeight + 9 * GapV + 2 * ShellThickness;
 
-	G4double HollowLength = 5 * ScrLength + 6 * GapH;
+	G4double HollowLength = 5 * ScrLength + 6 * GapH + BodyHeight;
 	G4double HollowWidth = 5 * ScrWidth + 6 * GapH;
 	G4double HollowHeight = 8 * ScrHeight + 9 * GapV;
 
+	G4double ShellLength = HollowLength + 2 * ShellThickness;
+	G4double ShellWidth = HollowWidth + 2 * ShellThickness;
+	G4double ShellHeight = HollowHeight + 2 * ShellThickness;
+
 	//Start position
-	G4double X0 = 0.5 * (HollowLength - ScrLength) - GapFP;
-	G4double Y0 = - 0.5 * (HollowWidth - ScrWidth) - GapFP;
+	G4double X0 = 0.5 * (HollowLength - ScrLength) - GapFP - BodyHeight;
+	G4double Y0 = - 0.5 * (HollowWidth - ScrWidth) + GapFP;
 	G4double Z0 = 0.5 * (HollowHeight - ScrHeight) - GapFP;
 	G4double StartPosHole = 47. * mm;
+	G4double StartPosOpt = StartPosHole;
 	G4double distance = 35. * mm; //distance between holes
 
 	const G4int NLvls = 8, NRows = 5, NCols = 5;		//Scintillation plates
 	const G4int NOpt = 20;								//Num of optical fiber lines in one row
 	const G4int NPhot = 20;								//Num of photomultipliers in one row
-	const G4int NHoles = 4;								//Num of holes in one scintillation plate
 
 	G4double H_x = 0 * mm;
 	G4double H_y = 0.5 * ScrWidth - StartPosHole;
@@ -191,15 +192,15 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 	G4double XPlate, YPlate, ZPlate,
 			 XOpt, YOpt, ZOpt,
 			 XPhot, YPhot, ZPhot;
-	XPlate = X0, YPlate = Y0, ZPlate = Z0, 
-	XOpt = X0, YOpt = Y0, ZOpt = Z0, 
+	XPlate = X0, YPlate = Y0, ZPlate = Z0;
+	XOpt = 0 * mm, YOpt = 0.5 * ScrWidth - StartPosOpt, ZOpt = 0.5 * ScrHeight - 0.5 * HoleHeight + OptRad;
 	XPhot = X0, YPhot = Y0, ZPhot = Z0;
 
 	G4Box* solidScr = { NULL }, * solidHole = { NULL };
-	G4Tubs* solidCore = { NULL }, * solidInCov = { NULL }, * solidOutCov = { NULL },
-		* solidBody = { NULL }, * solidGlass = { NULL }, * solidPhot = { NULL };
-	G4LogicalVolume* logicScintplate = { NULL }, * logicCore = { NULL }, * logicInCov = { NULL },
-		* logicOutCov = { NULL }, * logicBody = { NULL }, * logicGlass = { NULL }, * logicPhot = { NULL };
+	G4Tubs* solidCore[NLvls][NCols][NOpt] = { NULL }, * solidInCov[NLvls][NCols][NOpt] = { NULL }, * solidOutCov[NLvls][NCols][NOpt] = { NULL },
+		* solidBody[NLvls][NPhot] = { NULL }, * solidGlass[NLvls][NPhot] = { NULL }, * solidPhot[NLvls][NPhot] = { NULL };
+	G4LogicalVolume* logicScintplate[NLvls][NCols][NRows] = { NULL }, * logicCore[NLvls][NCols][NOpt] = { NULL }, * logicInCov[NLvls][NCols][NOpt] = { NULL },
+		* logicOutCov[NLvls][NCols][NOpt] = { NULL }, * logicBody[NLvls][NPhot] = { NULL }, * logicGlass[NLvls][NPhot] = { NULL }, * logicPhot[NLvls][NPhot] = { NULL };
 	G4VPhysicalVolume* physScintplate[NLvls][NCols][NRows] = { NULL }, * physCore[NLvls][NCols][NOpt] = { NULL }, * physInCov[NLvls][NCols][NOpt] = { NULL },
 		* physOutCov[NLvls][NCols][NOpt] = { NULL }, * physBody[NLvls][NPhot] = { NULL }, * physGlass[NLvls][NPhot] = { NULL }, * physPhot[NLvls][NPhot] = { NULL };
 	G4SubtractionSolid* solidScintplate = { NULL };
@@ -216,7 +217,9 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 
 	//Variables for creating copies
 	G4int row, column, level;
+	G4int opt;
 	G4int PlateNCopy = 0, OptNCopy = 0, PhotNCopy = 0;
+	G4int OptCount = 0, PhotCount = 0;
 	
 
 	/* SOLID AND LOGICAL VOLUMES OF DETECTOR ELEMENTS */
@@ -244,31 +247,9 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 
 
 	//Hole 4
-	G4SubtractionSolid* solidScintplate4 = new G4SubtractionSolid("scintplate_s4", solidScintplate3, solidHole, HoleRot, trans4);
+	solidScintplate = new G4SubtractionSolid("scintplate_s4", solidScintplate3, solidHole, HoleRot, trans4);
 
-	logicScintplate = new G4LogicalVolume(solidScintplate4, Scint, "scintplate_l");
 	/* physScintplate[0][0][0] = new G4PVPlacement(0, G4ThreeVector(2 * ScrLength, -2 * ScrWidth, 0), logicScintplate, "scintplate", logicHollow, true, 0); */
-
-	//Optical fiber
-	solidCore = new G4Tubs("core_s", 0, OptRad - 2 * CovThickness, OptHeight, 0. * deg, 360. * deg);
-	logicCore = new G4LogicalVolume(solidCore, PS, "core_l");
-
-	solidInCov = new G4Tubs("InCov_s", OptRad - 2 * CovThickness, OptRad - CovThickness, OptHeight, 0. * deg, 360. * deg);
-	logicInCov = new G4LogicalVolume(solidInCov, PMMA, "InCov_l");
-
-	solidOutCov = new G4Tubs("OutCov_s", OptRad - CovThickness, OptRad, OptHeight, 0. * deg, 360. * deg);
-	logicOutCov = new G4LogicalVolume(solidOutCov, FP, "OutCov_l");
-
-	//Photomultiplier
-	solidBody = new G4Tubs("body_s", 0, BodyOuterRad, 0.5 * BodyHeight, 0. * deg, 360. * deg);
-	logicBody = new G4LogicalVolume(solidBody, AlMaterial, "body_l");
-
-	solidGlass = new G4Tubs("glass_s", 0, GlassRad, 0.5 * GlassHeight, 0. * deg, 360. * deg);
-	logicGlass = new G4LogicalVolume(solidGlass, PhotCat, "glass_l");
-
-	solidPhot = new G4Tubs("phot_s", 0, PhotRad, 0.5 * PhotHeight, 0. * deg, 360. * deg);
-	logicPhot = new G4LogicalVolume(solidPhot, AlMaterial, "phot_l");
-
 
 	//Constructing detector
 	for (level = 0; level < NLvls; level++)
@@ -277,9 +258,39 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 		{
 			for (row = 0; row < NRows; row++)
 			{
-				physScintplate[level][column][row] = new G4PVPlacement(0, G4ThreeVector(XPlate, YPlate, ZPlate), logicScintplate, "scintplate", logicHollow, true, PlateNCopy);
+				logicScintplate[level][column][row] = new G4LogicalVolume(solidScintplate, Scint, "scintplate_l");
+				physScintplate[level][column][row] = new G4PVPlacement(0, G4ThreeVector(XPlate, YPlate, ZPlate), logicScintplate[level][column][row], "scintplate", logicHollow, true, PlateNCopy);
 				YPlate += (ScrWidth + GapH);
 				PlateNCopy++;
+
+				for (opt = 0; opt < 4; opt++)
+				{
+					//Core
+					solidCore[level][column][OptCount] = new G4Tubs("core_s", 0, OptRad - 2 * CovThickness, OptHeight, 0. * deg, 360. * deg);
+					logicCore[level][column][OptCount] = new G4LogicalVolume(solidCore[level][column][OptCount], PS, "core_l");
+					physCore[level][column][OptCount] = new G4PVPlacement(OptRot, G4ThreeVector(XOpt, YOpt, ZOpt), logicCore[level][column][OptCount], "CORE", logicScintplate[level][column][row], false, OptNCopy, checkOverlaps);
+
+					//Inner cover
+					solidInCov[level][column][OptCount] = new G4Tubs("InCov_s", 0, OptRad - CovThickness, OptHeight, 0. * deg, 360. * deg);
+					logicInCov[level][column][OptCount] = new G4LogicalVolume(solidInCov[level][column][OptCount], PMMA, "InCov_l");
+					physInCov[level][column][OptCount] = new G4PVPlacement(OptRot, G4ThreeVector(0, 0, 0), logicInCov[level][column][OptCount], "INNER COVER", logicCore[level][column][OptCount], false, OptNCopy, checkOverlaps);
+
+					//Outer cover
+					solidOutCov[level][column][OptCount] = new G4Tubs("OutCov_s", 0, OptRad, OptHeight, 0. * deg, 360. * deg);
+					logicOutCov[level][column][OptCount] = new G4LogicalVolume(solidOutCov[level][column][OptCount], FP, "OutCov_l");
+					physInCov[level][column][OptCount] = new G4PVPlacement(OptRot, G4ThreeVector(0, 0, 0), logicInCov[level][column][OptCount], "OUTER COVER", logicInCov[level][column][row], false, OptNCopy, checkOverlaps);
+
+					OptNCopy++;
+					OptCount++;
+
+					YOpt -= distance;
+				}
+				
+				XOpt = 0 * mm;
+				YOpt = 0.5 * ScrWidth - StartPosOpt; 
+				ZOpt = 0.5 * ScrHeight - OptRad;
+
+				OptCount = 0;
 			}
 			XPlate -= (ScrLength + GapH);
 			YPlate = Y0;
@@ -290,35 +301,10 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 	}
 
 
-	/* for (row = 0; row < 5; row++)
-	{
-		for (column = 0; column < 5; column++)
-		{
-			solidScr[NumPl] = new G4Box("plate_s", 0.5 * DlinaScr, 0.5 * ShirinaScr, 0.5 * VisotaScr);
-			solidOtv[NumPl] = new G4Box("otv", 0.5 * DlinaScr + 0.1 * mm, 0.5 * Shirinaotv, 0.5 * Visotaotv);
-			for (hole = 0; hole < 4; hole++)
-			{
-				solidScintplate[Numh] = new G4SubtractionSolid("scintplate_s", solidScr[NumPl], solidOtv[NumPl], OtvRot, G4ThreeVector(h_xpos, h_ypos, h_zpos));
-				h_ypos += distance;
-				Numh++;
-			}
-			h_ypos += 2 * StartPosOtv;
-			logicScintplate[NumPl] = new G4LogicalVolume(solidScintplate[Numh - 1], Scint, "scintplate_l");
-			physScintplate[NumPl] = new G4PVPlacement(0, G4ThreeVector(XPlate, YPlate, ZPlate), logicScintplate[NumPl], "scintplate", logicWorld, true, NPlate);
-			YPlate += ShirinaScr;
-			NumPl++;
-		}
-		XPlate -= DlinaScr;
-		YPlate = Y0;
-		h_xpos -= DlinaScr;
-		h_ypos = Y0 - 0.5 * ShirinaScr + StartPosOtv;
-	} */
-
-
 	/*	OPTICAL PROPERTIES	*/
 
 
-//Scintillator optical properties
+	//Scintillator optical properties
 	const G4int nEntries = 60;
 	G4double PhotonEnergy[nEntries] = { 2.3, 2.31525, 2.33051, 2.34576, 2.36102, 2.37627, 2.39153, 2.40678, 2.42203, 2.43729, 2.45254, 2.4678, 2.48305, 2.49831, 2.51356,
 		 2.52881, 2.54407, 2.55932, 2.57458, 2.58983, 2.60508, 2.62034, 2.63559, 2.65085, 2.6661, 2.68136, 2.69661, 2.71186, 2.72712, 2.74237,
