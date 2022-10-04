@@ -140,7 +140,7 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 	//Optical fiber
 	G4double OptRad = 0.5 * mm;
 	G4double OptHeight = 100 * mm;
-	G4double CovThickness = 0.02 * mm;
+	G4double CovThickness = 0.03 * mm;
 	G4RotationMatrix* OptRot = new G4RotationMatrix;
 	OptRot->rotateY(90. * deg);
 
@@ -238,9 +238,9 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 	G4double XOpt[NHoles], YOpt[NHoles], ZOpt[NHoles];
 	for (h = 0; h < NHoles; h++)
 	{
-		XOpt[h] = H_x[h];
-		YOpt[h] = H_y[h];
-		ZOpt[h] = H_z[h] - OptRad;
+		XOpt[h] = 0 * mm;
+		YOpt[h] = 0 * mm;
+		ZOpt[h] = - OptRad;
 	}
 
 	//Constructing detector
@@ -264,7 +264,7 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 					//Outer cover
 					solidOutCov[level][column][OptCount] = new G4Tubs("OutCov_s", 0, OptRad, OptHeight, 0. * deg, 360. * deg);
 					logicOutCov[level][column][OptCount] = new G4LogicalVolume(solidOutCov[level][column][OptCount], FP, "OutCov_l");
-					physOutCov[level][column][OptCount] = new G4PVPlacement(OptRot, G4ThreeVector(XOpt[opt], YOpt[opt], ZOpt[opt]), logicOutCov[level][column][OptCount], "OUTER COVER", logicScintplate[level][column][row], false, OptNCopy, checkOverlaps);
+					physOutCov[level][column][OptCount] = new G4PVPlacement(OptRot, G4ThreeVector(XOpt[opt], YOpt[opt], ZOpt[opt]), logicOutCov[level][column][OptCount], "OUTER COVER", logicHole[level][column][HoleCount], false, OptNCopy, checkOverlaps);
 
 					//Inner cover
 					solidInCov[level][column][OptCount] = new G4Tubs("InCov_s", 0, OptRad - CovThickness, OptHeight, 0. * deg, 360. * deg);
