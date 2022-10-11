@@ -132,8 +132,8 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 	G4double ScrHeight = 5 * mm;
 
 	//Holes
-	G4double HoleLength = ScrLength + 0.1 * mm;
-	G4double HoleWidth = 1 * mm;
+	G4double HoleLength = ScrLength + 0.01 * mm;
+	G4double HoleWidth = 1.01 * mm;
 	G4double HoleHeight = 4 * mm;
 	G4RotationMatrix* HoleRot = new G4RotationMatrix;
 
@@ -171,7 +171,7 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 
 	//Start position
 	G4double X0 = 0.5 * (HollowLength - ScrLength) - GapFP - BodyHeight;
-	G4double Y0 = - 0.5 * (HollowWidth - ScrWidth) + GapFP;
+	G4double Y0 = -0.5 * (HollowWidth - ScrWidth) + GapFP;
 	G4double Z0 = 0.5 * (HollowHeight - ScrHeight) - GapFP;
 	G4double StartPosHole = 47. * mm;
 	G4double StartPosOpt = StartPosHole;
@@ -190,8 +190,8 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 
 	//Positions of plate, optical fiber and photomultier
 	G4double XPlate, YPlate, ZPlate,
-			 XOpt, YOpt, ZOpt,
-			 XPhot, YPhot, ZPhot;
+		XOpt, YOpt, ZOpt,
+		XPhot, YPhot, ZPhot;
 	XPlate = X0, YPlate = Y0, ZPlate = Z0;
 	XOpt = 0 * mm, YOpt = 0.5 * ScrWidth - StartPosOpt, ZOpt = 0.5 * ScrHeight - 0.5 * HoleHeight + OptRad;
 	XPhot = X0, YPhot = Y0, ZPhot = Z0;
@@ -220,7 +220,7 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 	G4int opt;
 	G4int PlateNCopy = 0, OptNCopy = 0, PhotNCopy = 0;
 	G4int OptCount = 0, PhotCount = 0;
-	
+
 
 	/* SOLID AND LOGICAL VOLUMES OF DETECTOR ELEMENTS */
 
@@ -265,29 +265,29 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 
 				for (opt = 0; opt < 4; opt++)
 				{
-					//Core
-					solidCore[level][column][OptCount] = new G4Tubs("core_s", 0, OptRad - 2 * CovThickness, OptHeight, 0. * deg, 360. * deg);
-					logicCore[level][column][OptCount] = new G4LogicalVolume(solidCore[level][column][OptCount], PS, "core_l");
-					physCore[level][column][OptCount] = new G4PVPlacement(OptRot, G4ThreeVector(XOpt, YOpt, ZOpt), logicCore[level][column][OptCount], "CORE", logicScintplate[level][column][row], false, OptNCopy, checkOverlaps);
+					//Outer cover
+					solidOutCov[level][column][OptCount] = new G4Tubs("OutCov_s", 0, OptRad, OptHeight, 0. * deg, 360. * deg);
+					logicOutCov[level][column][OptCount] = new G4LogicalVolume(solidOutCov[level][column][OptCount], FP, "OutCov_l");
+					physInCov[level][column][OptCount] = new G4PVPlacement(OptRot, G4ThreeVector(XOpt, YOpt, ZOpt), logicOutCov[level][column][OptCount], "OUTER COVER", logicScintplate[level][column][row], false, OptNCopy, checkOverlaps);
 
 					//Inner cover
 					solidInCov[level][column][OptCount] = new G4Tubs("InCov_s", 0, OptRad - CovThickness, OptHeight, 0. * deg, 360. * deg);
 					logicInCov[level][column][OptCount] = new G4LogicalVolume(solidInCov[level][column][OptCount], PMMA, "InCov_l");
-					physInCov[level][column][OptCount] = new G4PVPlacement(OptRot, G4ThreeVector(0, 0, 0), logicInCov[level][column][OptCount], "INNER COVER", logicCore[level][column][OptCount], false, OptNCopy, checkOverlaps);
+					physInCov[level][column][OptCount] = new G4PVPlacement(0, G4ThreeVector(0., 0., 0.), logicInCov[level][column][OptCount], "INNER COVER", logicOutCov[level][column][OptCount], false, OptNCopy, checkOverlaps);
 
-					//Outer cover
-					solidOutCov[level][column][OptCount] = new G4Tubs("OutCov_s", 0, OptRad, OptHeight, 0. * deg, 360. * deg);
-					logicOutCov[level][column][OptCount] = new G4LogicalVolume(solidOutCov[level][column][OptCount], FP, "OutCov_l");
-					physInCov[level][column][OptCount] = new G4PVPlacement(OptRot, G4ThreeVector(0, 0, 0), logicInCov[level][column][OptCount], "OUTER COVER", logicInCov[level][column][row], false, OptNCopy, checkOverlaps);
+					//Core
+					solidCore[level][column][OptCount] = new G4Tubs("core_s", 0, OptRad - 2 * CovThickness, OptHeight, 0. * deg, 360. * deg);
+					logicCore[level][column][OptCount] = new G4LogicalVolume(solidCore[level][column][OptCount], PS, "core_l");
+					physCore[level][column][OptCount] = new G4PVPlacement(0, G4ThreeVector(0., 0., 0.), logicCore[level][column][OptCount], "CORE", logicInCov[level][column][OptCount], false, OptNCopy, checkOverlaps);
 
 					OptNCopy++;
 					OptCount++;
 
 					YOpt -= distance;
 				}
-				
+
 				XOpt = 0 * mm;
-				YOpt = 0.5 * ScrWidth - StartPosOpt; 
+				YOpt = 0.5 * ScrWidth - StartPosOpt;
 				ZOpt = 0.5 * ScrHeight - OptRad;
 
 				OptCount = 0;
