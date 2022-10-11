@@ -154,7 +154,7 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 
 	//Optical fiber
 	G4double OptRad = 0.5 * mm;
-	G4double OptHeight = 100 * mm;
+	G4double OptHeight = ;
 	G4double CovThickness = 0.03 * mm;
 	G4RotationMatrix* OptRot = new G4RotationMatrix;
 	OptRot->rotateY(90. * deg);
@@ -181,7 +181,6 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 	const G4int NOpt = 20;								//Num of optical fiber lines in one row
 	const G4int NPhot = 20;								//Num of photomultipliers in one row
 
-	G4int y = -4, k = -2, z = 1, l = 0;					//For constructing optical fiber
 
 	G4double H_x = 0 * mm;
 	G4double H_y = 0.5 * ScrWidth - StartPosHole;
@@ -197,11 +196,6 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 	XPlate = X0, YPlate = Y0, ZPlate = Z0;
 	XOpt = 0 * mm, YOpt = 0.5 * ScrWidth - StartPosOpt, ZOpt = 0.5 * ScrHeight - 0.5 * HoleHeight + OptRad;
 	XPhot = X0, YPhot = Y0, ZPhot = Z0;
-	
-	G4double OPT_X, OPT_Y, OPT_Z;
-	OPT_X = XOpt;
-	OPT_Y = y * 0.5 * ScrWidth + k * GapH + YOpt;
-	OPT_Z = 0.5 * HollowHeight - GapFP - z * 0.5 * ScrHeight - l * GapV;
 
 	G4Box* solidScr = { NULL }, * solidHole = { NULL };
 	G4Tubs* solidCore[NLvls][NCols][NOpt] = { NULL }, * solidInCov[NLvls][NCols][NOpt] = { NULL }, * solidOutCov[NLvls][NCols][NOpt] = { NULL },
@@ -257,6 +251,9 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 
 	/* physScintplate[0][0][0] = new G4PVPlacement(0, G4ThreeVector(2 * ScrLength, -2 * ScrWidth, 0), logicScintplate, "scintplate", logicHollow, true, 0); */
 
+	G4int y = -4, k = -2, z = 1, n = 0;					//For constructing optical fiber
+	G4double OPT_X, OPT_Y, OPT_Z;
+
 	//Constructing detector
 	for (level = 0; level < NLvls; level++)
 	{
@@ -269,6 +266,10 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 				YPlate += (ScrWidth + GapH);
 				PlateNCopy++;
 
+				OPT_X = -BodyHeight + XOpt;
+				OPT_Y = y * 0.5 * ScrWidth + k * GapH + YOpt;
+				OPT_Z = 0.5 * HollowHeight - GapFP - z * 0.5 * ScrHeight - n * GapV + ZOpt;
+
 				if (column == 0)
 				{
 					for (opt = 0; opt < 4; opt++)
@@ -276,7 +277,7 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 						//Outer cover
 						solidOutCov[level][column][OptCount] = new G4Tubs("OutCov_s", 0, OptRad, OptHeight, 0. * deg, 360. * deg);
 						logicOutCov[level][column][OptCount] = new G4LogicalVolume(solidOutCov[level][column][OptCount], FP, "OutCov_l");
-						physInCov[level][column][OptCount] = new G4PVPlacement(OptRot, G4ThreeVector(XOpt, YOpt, ZOpt), logicOutCov[level][column][OptCount], "OUTER COVER", logicHollow, false, OptNCopy, checkOverlaps);
+						physInCov[level][column][OptCount] = new G4PVPlacement(OptRot, G4ThreeVector(OPT_X, OPT_Y, OPT_Z), logicOutCov[level][column][OptCount], "OUTER COVER", logicHollow, false, OptNCopy, checkOverlaps);
 
 						//Inner cover
 						solidInCov[level][column][OptCount] = new G4Tubs("InCov_s", 0, OptRad - CovThickness, OptHeight, 0. * deg, 360. * deg);
@@ -291,34 +292,25 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 						OptNCopy++;
 						OptCount++;
 
-						YOpt -= distance;
+						OPT_Y -= distance;
 					}
 				}
 
-				OptCount = 0;
+				y += 2;
+				k++;
 			}
+			
 			XPlate -= (ScrLength + GapH);
 			YPlate = Y0;
+
+			y = -4, k = -2;
 		}
 		ZPlate -= (ScrHeight + GapV);
 		XPlate = X0;
 		YPlate = Y0;
-	}
 
-	/* //Optical fiber (prototype)
-	for (level = 0; level < NLvls; level++)
-	{
-		for (column = 0; column < NCols; column++)
-		{
-			for (row = 0; row < NRows; row++)
-			{
-				for (opt = 0; opt < 4; opt++)
-				{
-
-				}
-			}
-
-		}
+		z += 2;
+		n++;
 	}
 
 
