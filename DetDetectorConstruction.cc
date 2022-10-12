@@ -126,25 +126,15 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 	G4LogicalVolume* logicWorld = new G4LogicalVolume(solidWorld, Air, "World_l");
 	G4VPhysicalVolume* physWorld = new G4PVPlacement(0, G4ThreeVector(), logicWorld, "World", 0, false, 0, checkOverlaps);
 
-	//Detector steel shell and air hollow
-	G4double GapH = 0.1 * mm;		//Gap between plates on same level
-	G4double GapV = 0.1 * mm;		//Gap between levels 
-	G4double GapFP = 0.1 * mm;		//Gap between frame and plate
-
-	G4double ShellThickness = 2 * mm;
-
-	G4double HollowLength = 5 * ScrLength + 6 * GapH + BodyHeight;
-	G4double HollowWidth = 5 * ScrWidth + 6 * GapH;
-	G4double HollowHeight = 8 * ScrHeight + 9 * GapV;
-
-	G4double ShellLength = HollowLength + 2 * ShellThickness;
-	G4double ShellWidth = HollowWidth + 2 * ShellThickness;
-	G4double ShellHeight = HollowHeight + 2 * ShellThickness;
-
 	//Scintillator
 	G4double ScrLength = 200 * mm;
 	G4double ScrWidth = 200 * mm;
 	G4double ScrHeight = 5 * mm;
+
+	//Gaps in detector
+	G4double GapH = 0.1 * mm;		//Gap between plates on same level
+	G4double GapV = 0.1 * mm;		//Gap between levels 
+	G4double GapFP = 0.1 * mm;		//Gap between frame and plate
 
 	//Holes
 	G4double HoleLength = ScrLength + 0.01 * mm;
@@ -154,7 +144,7 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 
 	//Optical fiber
 	G4double OptRad = 0.5 * mm;
-	G4double OptHeight = ;
+	G4double OptHeight = 0.5 * (5 * ScrLength + 4 * GapH);
 	G4double CovThickness = 0.03 * mm;
 	G4RotationMatrix* OptRot = new G4RotationMatrix;
 	OptRot->rotateY(90. * deg);
@@ -168,6 +158,17 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 
 	G4double BodyOuterRad = GlassRad + 0.1 * mm;
 	G4double BodyHeight = GlassHeight + PhotHeight;
+
+	//Detector steel shell and air hollow
+	G4double ShellThickness = 2 * mm;
+
+	G4double HollowLength = 5 * ScrLength + 6 * GapH + BodyHeight;
+	G4double HollowWidth = 5 * ScrWidth + 6 * GapH;
+	G4double HollowHeight = 8 * ScrHeight + 9 * GapV;
+
+	G4double ShellLength = HollowLength + 2 * ShellThickness;
+	G4double ShellWidth = HollowWidth + 2 * ShellThickness;
+	G4double ShellHeight = HollowHeight + 2 * ShellThickness;
 
 	//Start position
 	G4double X0 = 0.5 * (HollowLength - ScrLength) - GapFP - BodyHeight;
@@ -251,8 +252,8 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 
 	/* physScintplate[0][0][0] = new G4PVPlacement(0, G4ThreeVector(2 * ScrLength, -2 * ScrWidth, 0), logicScintplate, "scintplate", logicHollow, true, 0); */
 
-	G4int y = -4, k = -2, z = 1, n = 0;					//For constructing optical fiber
-	G4double OPT_X, OPT_Y, OPT_Z;
+	G4int y = -4, k = -2, m = 1, n = 0;					//For constructing optical fiber
+	G4double OPT_X, OPT_Y, OPT_Z;						//Coordinates of fiber line in Hollow syst of coordinates
 
 	//Constructing detector
 	for (level = 0; level < NLvls; level++)
@@ -268,7 +269,7 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 
 				OPT_X = -BodyHeight + XOpt;
 				OPT_Y = y * 0.5 * ScrWidth + k * GapH + YOpt;
-				OPT_Z = 0.5 * HollowHeight - GapFP - z * 0.5 * ScrHeight - n * GapV + ZOpt;
+				OPT_Z = 0.5 * HollowHeight - GapFP - m * 0.5 * ScrHeight - n * GapV + ZOpt;
 
 				if (column == 0)
 				{
@@ -299,7 +300,7 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 				y += 2;
 				k++;
 			}
-			
+
 			XPlate -= (ScrLength + GapH);
 			YPlate = Y0;
 
@@ -309,7 +310,7 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 		XPlate = X0;
 		YPlate = Y0;
 
-		z += 2;
+		m += 2;
 		n++;
 	}
 
