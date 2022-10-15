@@ -233,7 +233,7 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 
 	//Optical fiber
 	G4double OptRad = 0.5 * mm;
-	G4double OptHeight = 0.5 * (5 * ScrLength + 4 * GapH);
+	G4double OptHeight = (5 * ScrLength + 4 * GapH);
 	G4double CovThickness = 0.03 * mm;
 	G4RotationMatrix* OptRot = new G4RotationMatrix;
 	OptRot->rotateY(90. * deg);
@@ -245,8 +245,11 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 	G4double PhotRad = GlassRad;
 	G4double PhotHeight = 0.1 * mm;
 
-	G4double BodyOuterRad = GlassRad + 0.1 * mm;
+	G4double BodyRad = GlassRad + 0.1 * mm;
 	G4double BodyHeight = GlassHeight + PhotHeight;
+
+	G4RotationMatrix* BodyRot = new G4RotationMatrix;
+	BodyRot->rotateY(90. * deg);
 
 	//Detector steel shell and air hollow
 	G4double ShellThickness = 2 * mm;
@@ -279,14 +282,7 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 	G4double Glass_zpos = 0.5 * BodyHeight - 0.5 * GlassHeight;
 	G4double Phot_zpos = -0.5 * BodyHeight + 0.5 * PhotHeight;
 
-	//Positions of plate, optical fiber and photomultier
-	G4double XPlate, YPlate, ZPlate,
-		XOpt, YOpt, ZOpt,
-		XPhot, YPhot, ZPhot;
-	XPlate = X0, YPlate = Y0, ZPlate = Z0;
-	XOpt = 0 * mm, YOpt = 0.5 * ScrWidth - StartPosOpt, ZOpt = 0.5 * ScrHeight - 0.5 * HoleHeight + OptRad;
-	XPhot = X0, YPhot = Y0, ZPhot = Z0;
-
+	//Volumes
 	G4Box* solidScr = { NULL }, * solidHole = { NULL };
 	G4Tubs* solidCore[NLvls][NCols][NOpt] = { NULL }, * solidInCov[NLvls][NCols][NOpt] = { NULL }, * solidOutCov[NLvls][NCols][NOpt] = { NULL },
 		* solidBody[NLvls][NPhot] = { NULL }, * solidGlass[NLvls][NPhot] = { NULL }, * solidPhot[NLvls][NPhot] = { NULL };
@@ -307,7 +303,7 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 	G4VPhysicalVolume* physHollow = new G4PVPlacement(0, G4ThreeVector(0., 0., 0.), logicHollow, "Hollow", logicShell, false, 0, checkOverlaps);
 
 	//Variables for creating copies
-	G4int row, column, level, opt;
+	G4int row, column, level, opt, phot;
 	G4int PlateNCopy = 0, OptNCopy = 0, PhotNCopy = 0;
 	G4int OptCount = 0, PhotCount = 0;
 
@@ -339,11 +335,17 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 	//Hole 4
 	solidScintplate = new G4SubtractionSolid("scintplate_s4", solidScintplate3, solidHole, HoleRot, trans4);
 
-	/* physScintplate[0][0][0] = new G4PVPlacement(0, G4ThreeVector(2 * ScrLength, -2 * ScrWidth, 0), logicScintplate, "scintplate", logicHollow, true, 0); */
+	//Positions of plate, optical fiber and photomultier
+	G4double XPlate, YPlate, ZPlate,
+		XOpt, YOpt, ZOpt;
+	G4int y = -4, k = -2, m = 1, n = 0;																				//For constructing optical fiber
 
-	G4int y = -4, k = -2, m = 1, n = 0;					//For constructing optical fiber
-	G4double OPT_X, OPT_Y, OPT_Z;						//Coordinates of fiber line in Hollow syst of coordinates
-	G4double PHOT_X, PHOT_Y, PHOT_Z;					//Coordinates of photomultipliers in Hollow syst of coordinates 
+	XPlate = X0, YPlate = Y0, ZPlate = Z0;																			//Coordinates of scintillation plates in "Hollow" system of coordinates
+	XOpt = 0 * mm,																									//
+	YOpt = 0.5 * ScrWidth - StartPosOpt,																			//Coordinates of fiber lines in "scintplate" system of coordinates
+	ZOpt = 0.5 * ScrHeight - 0.5 * HoleHeight + OptRad;																//
+	G4double OPT_X, OPT_Y, OPT_Z;																					//Coordinates of fiber lines in "Hollow" system of coordinates
+	G4double PHOT_X, PHOT_Y, PHOT_Z;																				//Coordinates of photomultipliers in "Hollow" system of coordinates 
 
 	//Constructing detector
 	for (level = 0; level < NLvls; level++)
@@ -361,27 +363,39 @@ G4VPhysicalVolume* DetDetectorConstruction::Construct()
 				OPT_Y = y * 0.5 * ScrWidth + k * GapH + YOpt;
 				OPT_Z = 0.5 * HollowHeight - GapFP - m * 0.5 * ScrHeight - n * GapV + ZOpt + 0.01 * mm;
 
+				PHOT_X = OPT_X + 0.5 * (OptHeight + BodyHeight);
+				PHOT_Y = OPT_Y;
+				PHOT_Z = OPT_Z;
+
 				if (column == 0)
 				{
 					for (opt = 0; opt < 4; opt++)
 					{
 						//Outer cover
-						solidOutCov[level][column][OptCount] = new G4Tubs("OutCov_s", 0, OptRad, OptHeight, 0. * deg, 360. * deg);
+						solidOutCov[level][column][OptCount] = new G4Tubs("OutCov_s", 0, OptRad, 0.5 * OptHeight, 0. * deg, 360. * deg);
 						logicOutCov[level][column][OptCount] = new G4LogicalVolume(solidOutCov[level][column][OptCount], FP, "OutCov_l");
 						physInCov[level][column][OptCount] = new G4PVPlacement(OptRot, G4ThreeVector(OPT_X, OPT_Y, OPT_Z), logicOutCov[level][column][OptCount], "OUTER COVER", logicHollow, false, OptNCopy, checkOverlaps);
 
 						//Inner cover
-						solidInCov[level][column][OptCount] = new G4Tubs("InCov_s", 0, OptRad - CovThickness, OptHeight, 0. * deg, 360. * deg);
+						solidInCov[level][column][OptCount] = new G4Tubs("InCov_s", 0, OptRad - CovThickness, 0.5 * OptHeight, 0. * deg, 360. * deg);
 						logicInCov[level][column][OptCount] = new G4LogicalVolume(solidInCov[level][column][OptCount], PMMA, "InCov_l");
 						physInCov[level][column][OptCount] = new G4PVPlacement(0, G4ThreeVector(0., 0., 0.), logicInCov[level][column][OptCount], "INNER COVER", logicOutCov[level][column][OptCount], false, OptNCopy, checkOverlaps);
 
 						//Core
-						solidCore[level][column][OptCount] = new G4Tubs("core_s", 0, OptRad - 2 * CovThickness, OptHeight, 0. * deg, 360. * deg);
+						solidCore[level][column][OptCount] = new G4Tubs("core_s", 0, OptRad - 2 * CovThickness, 0.5 * OptHeight, 0. * deg, 360. * deg);
 						logicCore[level][column][OptCount] = new G4LogicalVolume(solidCore[level][column][OptCount], PS, "core_l");
 						physCore[level][column][OptCount] = new G4PVPlacement(0, G4ThreeVector(0., 0., 0.), logicCore[level][column][OptCount], "CORE", logicInCov[level][column][OptCount], false, OptNCopy, checkOverlaps);
 
 						OptNCopy++;
 						OptCount++;
+					}
+
+					for (phot = 0; phot < 4; phot++)
+					{
+						//Body of PMT
+						solidBody[level][PhotCount] = new G4Tubs("Body_s", 0, BodyRad, 0.5 * BodyHeight, 0. * deg, 360. * deg);
+						logicBody[level][PhotCount] = new G4LogicalVolume(solidBody[level][PhotCount], AlMaterial, "Body_l");
+						physBody[level][PhotCount] = new G4PVPlacement(BodyRot, G4ThreeVector(PHOT_X, PHOT_Y, PHOT_Z), logicBody[level][BodyCount], "BODY", logicHollow, false, PhotNCopy, checkOverlaps);
 
 						OPT_Y -= distance;
 					}
